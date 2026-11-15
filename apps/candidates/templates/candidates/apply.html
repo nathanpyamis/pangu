@@ -1,0 +1,124 @@
+{% extends "cms/base.html" %}
+{% block title %}Apply to stand – {{ party.name }}{% endblock %}
+{% block body_class %}inner{% endblock %}
+{% block content %}
+<div class="page-wrap">
+<div class="page-head">
+  <div class="kicker">{{ party.election_name }}</div>
+  <h1>Intending candidate application</h1>
+  <p>Fields marked <span class="req">*</span> are required. It takes about 15 minutes.{% if party.applications_close %} Applications close {{ party.applications_close|date:"j F Y" }}.{% endif %}</p>
+</div>
+
+{% if form.errors %}<div class="alert alert-err"><b>Please check the highlighted fields.</b>{% if form.non_field_errors %}<br>{{ form.non_field_errors|join:" " }}{% endif %} Uploaded files must be chosen again.</div>{% endif %}
+
+<form id="apply-form" method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <div class="hp" aria-hidden="true"><label>Website {{ form.website }}</label></div>
+
+    <div class="form-card section-card" id="s1"><h3><span class="n">1</span>About you</h3>
+      <div class="form-grid">
+        {% include "candidates/_field.html" with f=form.full_name %}
+        {% include "candidates/_field.html" with f=form.preferred_name %}
+        {% include "candidates/_field.html" with f=form.gender %}
+        {% include "candidates/_field.html" with f=form.date_of_birth %}
+        {% include "candidates/_field.html" with f=form.phone %}
+        {% include "candidates/_field.html" with f=form.email %}
+        {% include "candidates/_field.html" with f=form.nid_number %}
+        {% include "candidates/_field.html" with f=form.home_province %}
+        {% include "candidates/_field.html" with f=form.village %}
+        {% include "candidates/_field.html" with f=form.current_address %}
+      </div>
+    </div>
+
+    <div class="form-card section-card" id="s2"><h3><span class="n">2</span>Seat you want to contest</h3>
+      <div class="form-grid">
+        <div class="field full{% if form.electorate.errors %} has-error{% endif %}">
+          <label for="id_electorate">Electorate <span class="req">*</span></label>
+          <select name="electorate" id="id_electorate" required>
+            <option value="">Choose the seat you want to contest</option>
+            {% for prov, items in form.electorate_groups %}
+              <optgroup label="{{ prov }}">
+                {% for pk, name in items %}<option value="{{ pk }}"{% if form.electorate.value|stringformat:"s" == pk %} selected{% endif %}>{{ name }}</option>{% endfor %}
+              </optgroup>
+            {% endfor %}
+          </select>
+          <div class="help">Provincial seats are listed as "… Provincial".</div>
+          {% for e in form.electorate.errors %}<p class="err">{{ e }}</p>{% endfor %}
+        </div>
+        {% include "candidates/_field.html" with f=form.years_resident %}
+        {% include "candidates/_field.html" with f=form.born_in_electorate %}
+      </div>
+    </div>
+
+    <div class="form-card section-card" id="s3"><h3><span class="n">3</span>Background</h3>
+      <div class="form-grid">
+        {% include "candidates/_field.html" with f=form.occupation %}
+        {% include "candidates/_field.html" with f=form.employer %}
+        {% include "candidates/_field.html" with f=form.education %}
+        {% include "candidates/_field.html" with f=form.qualifications %}
+        {% include "candidates/_field.html" with f=form.contested_before cls="full" %}
+        {% include "candidates/_field.html" with f=form.previous_contests cls="full" show="contested" %}
+      </div>
+    </div>
+
+    <div class="form-card section-card" id="s4"><h3><span class="n">4</span>Party membership</h3>
+      <div class="form-grid">
+        {% include "candidates/_field.html" with f=form.party_status %}
+        {% include "candidates/_field.html" with f=form.pangu_member_number show="pangu_member" %}
+        {% include "candidates/_field.html" with f=form.other_party_name show="other_party" %}
+        {% include "candidates/_field.html" with f=form.will_resign_other_party cls="full" show="other_party" %}
+      </div>
+    </div>
+
+    <div class="form-card section-card" id="s5"><h3><span class="n">5</span>Your statement</h3>
+      {% include "candidates/_field.html" with f=form.why_pangu %}
+      <div style="height:16px"></div>
+      {% include "candidates/_field.html" with f=form.priorities %}
+      <div style="height:16px"></div>
+      {% include "candidates/_field.html" with f=form.community_roles %}
+      <div style="height:16px"></div>
+      {% include "candidates/_field.html" with f=form.campaign_readiness %}
+    </div>
+
+    <div class="form-card section-card" id="s6"><h3><span class="n">6</span>Referees</h3>
+      <p class="muted mt0">Two people who know you well – not family. The party may phone them.</p>
+      <div class="form-grid">
+        {% include "candidates/_field.html" with f=form.referee1_name %}
+        {% include "candidates/_field.html" with f=form.referee1_phone %}
+        {% include "candidates/_field.html" with f=form.referee1_relationship %}
+        {% include "candidates/_field.html" with f=form.referee2_name %}
+        {% include "candidates/_field.html" with f=form.referee2_phone %}
+        {% include "candidates/_field.html" with f=form.referee2_relationship %}
+      </div>
+    </div>
+
+    <div class="form-card section-card" id="s7"><h3><span class="n">7</span>Documents</h3>
+      <p class="muted mt0">PDF, JPG or PNG, up to 5&nbsp;MB each. A phone photo of a paper document is fine. Documents are only visible to party reviewers.</p>
+      <div class="form-grid">
+        <div>{% include "candidates/_field.html" with f=form.photo %}<img id="photo-preview" alt="" hidden style="width:110px;margin-top:10px;border-radius:10px;border:2px solid var(--gold)"></div>
+        {% include "candidates/_field.html" with f=form.cv %}
+        {% include "candidates/_field.html" with f=form.nid_copy %}
+        {% include "candidates/_field.html" with f=form.police_clearance %}
+      </div>
+    </div>
+
+    <div class="form-card section-card" id="s8"><h3><span class="n">8</span>Declaration</h3>
+      {% include "candidates/_field.html" with f=form.declared_eligible %}
+      {% include "candidates/_field.html" with f=form.consent_vetting %}
+      {% include "candidates/_field.html" with f=form.declared_true %}
+      <div style="max-width:420px;margin-top:.8rem">{% include "candidates/_field.html" with f=form.signature_name %}</div>
+      <div class="form-actions"><button class="btn btn-gold" type="submit">Submit application</button><span class="muted">Uploading can take a minute on a slow connection.</span></div>
+    </div>
+  </form>
+</div>
+<script>
+(function(){var f=document.getElementById("apply-form");if(!f)return;
+function t(n,show){document.querySelectorAll('[data-show-when="'+n+'"]').forEach(function(e){e.style.display=show?"":"none";});}
+var ps=f.querySelector('[name="party_status"]'),cb=f.querySelector('[name="contested_before"]');
+function sync(){t("other_party",ps&&ps.value==="OTHER");t("pangu_member",ps&&ps.value==="PANGU");t("contested",cb&&cb.checked);}
+if(ps)ps.addEventListener("change",sync);if(cb)cb.addEventListener("change",sync);sync();
+var ph=f.querySelector('[name="photo"]'),pv=document.getElementById("photo-preview");
+if(ph&&pv)ph.addEventListener("change",function(){var x=ph.files&&ph.files[0];if(x){pv.src=URL.createObjectURL(x);pv.hidden=false;}});
+f.addEventListener("submit",function(){var b=f.querySelector('button[type="submit"]');if(b){b.disabled=true;b.textContent="Uploading… please wait";}});})();
+</script>
+{% endblock %}

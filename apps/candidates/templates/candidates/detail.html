@@ -1,0 +1,138 @@
+{% extends "portal/base.html" %}
+{% block title %}{{ app.full_name }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'candidate_db:database' %}">&larr; All applications</a></p>
+
+<div class="card who">
+  {% if app.photo %}<img src="{% url 'candidate_db:document' app.pk 'photo' %}" alt="{{ app.full_name }}">{% endif %}
+  <div style="flex:1">
+    <span class="pill {{ app.status }}">{{ app.get_status_display }}</span>
+    {% if app.flagged %}<span class="pill flag">Possible duplicate</span>{% endif %}
+    <h1 style="margin:6px 0 2px;font-size:24px">{{ app.full_name }}</h1>
+    <div class="muted">{{ app.reference }} · {{ app.electorate.name }} · submitted {{ app.created_at|date:"j M Y, H:i" }}</div>
+    {% if app.status == "APPROVED" %}<p style="margin:12px 0 0">
+      {% if user.is_exec %}<a class="btn btn-gold" href="{% url 'candidate_db:letter' app.pk %}" target="_blank">Endorsement letter (PDF)</a>{% endif %}
+      <a class="btn btn-green" href="{% url 'candidate_db:card' app.pk %}" target="_blank">{% if app.id_card_printed %}Reprint{% else %}Print{% endif %} candidate ID card</a>
+      {% if app.candidate_number %}<span class="muted" style="margin-left:6px">{{ app.candidate_number }}</span>{% endif %}</p>{% endif %}
+  </div>
+</div>
+
+{% if app.flagged %}
+<div class="alert alert-warn"><b>{{ app.flag_reason }}.</b>
+  {% if app.duplicate_of %}<a href="{% url 'candidate_db:detail' app.duplicate_of.pk %}">Open {{ app.duplicate_of.reference }}</a>.{% endif %}
+  {% if user.is_exec %}<form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="action" value="clear_flag"><button class="btn btn-outline">Not a duplicate – clear flag</button></form>{% endif %}
+</div>
+{% endif %}
+
+<div class="detail">
+  <div>
+    <div class="card"><h2>Personal</h2>
+      <dl class="kv">
+        <dt>Preferred name</dt><dd>{{ app.preferred_name|default:"–" }}</dd>
+        <dt>Gender</dt><dd>{{ app.get_gender_display }}</dd>
+        <dt>Date of birth</dt><dd>{{ app.date_of_birth|date:"j M Y" }} (age {{ age }} on polling day)</dd>
+        <dt>NID</dt><dd>{{ app.nid_number|default:"–" }}</dd>
+        <dt>Phone</dt><dd><a href="tel:{{ app.phone }}">{{ app.phone }}</a></dd>
+        <dt>Email</dt><dd>{{ app.email|default:"–" }}</dd>
+        <dt>Home</dt><dd>{{ app.village }}, {{ app.home_province }}</dd>
+        <dt>Address</dt><dd>{{ app.current_address|default:"–" }}</dd>
+      </dl>
+    </div>
+    <div class="card"><h2>Seat and background</h2>
+      <dl class="kv">
+        <dt>Seat</dt><dd>{{ app.electorate.name }}, {{ app.electorate.province.name }}</dd>
+        <dt>Residence</dt><dd>{{ app.years_resident }} years{% if app.born_in_electorate %} · born in the electorate{% endif %}</dd>
+        <dt>Occupation</dt><dd>{{ app.occupation }}{% if app.employer %}, {{ app.employer }}{% endif %}</dd>
+        <dt>Education</dt><dd>{{ app.get_education_display }}{% if app.qualifications %}<br><small>{{ app.qualifications|linebreaksbr }}</small>{% endif %}</dd>
+        <dt>Contested before</dt><dd>{% if app.contested_before %}{{ app.previous_contests|linebreaksbr }}{% else %}No{% endif %}</dd>
+        <dt>Party</dt><dd>{{ app.get_party_status_display }}{% if app.pangu_member_number %} ({{ app.pangu_member_number }}){% endif %}{% if app.other_party_name %} – {{ app.other_party_name }}{% if app.will_resign_other_party %}, will resign{% endif %}{% endif %}</dd>
+      </dl>
+    </div>
+    <div class="card"><h2>Statement</h2>
+      <h4>Why Pangu</h4>{{ app.why_pangu|linebreaks }}
+      <h4>Priorities</h4>{{ app.priorities|linebreaks }}
+      {% if app.community_roles %}<h4>Community roles</h4>{{ app.community_roles|linebreaks }}{% endif %}
+      {% if app.campaign_readiness %}<h4>Campaign readiness</h4>{{ app.campaign_readiness|linebreaks }}{% endif %}
+    </div>
+    <div class="card"><h2>Referees and documents</h2>
+      <dl class="kv">
+        <dt>{{ app.referee1_name }}</dt><dd>{{ app.referee1_relationship }} · <a href="tel:{{ app.referee1_phone }}">{{ app.referee1_phone }}</a></dd>
+        <dt>{{ app.referee2_name }}</dt><dd>{{ app.referee2_relationship }} · <a href="tel:{{ app.referee2_phone }}">{{ app.referee2_phone }}</a></dd>
+      </dl>
+      <p style="margin-bottom:0">
+        <a class="btn btn-outline" target="_blank" href="{% url 'candidate_db:document' app.pk 'cv' %}">CV</a>
+        {% if app.nid_copy %}<a class="btn btn-outline" target="_blank" href="{% url 'candidate_db:document' app.pk 'nid_copy' %}">NID / birth cert</a>{% endif %}
+        {% if app.police_clearance %}<a class="btn btn-outline" target="_blank" href="{% url 'candidate_db:document' app.pk 'police_clearance' %}">Police clearance</a>{% else %}<span class="muted"> No police clearance uploaded</span>{% endif %}
+      </p>
+    </div>
+    <div class="card"><h2>Reviews ({{ reviews|length }})</h2>
+      {% for r in reviews %}
+        <div style="padding:.6rem 0;border-bottom:1px solid var(--line)">
+          <b>{{ r.reviewer.get_full_name|default:r.reviewer.username }}</b> <small class="muted">{{ r.reviewer_role }} · {{ r.created_at|date:"j M" }}</small>
+          <span class="pill ok" style="float:right">{{ r.get_recommendation_display }} · {{ r.total }}/25</span>
+          {% if r.comments %}<p class="mt0" style="margin-bottom:0">{{ r.comments|linebreaksbr }}</p>{% endif %}
+        </div>
+      {% empty %}<p class="muted mt0">No reviews yet.</p>{% endfor %}
+    </div>
+  </div>
+
+  <div>
+    {% if scores %}
+    <div class="card"><h2>Average score · {{ scores.overall }}/5</h2>
+      {% for key, label in criteria %}
+        {% for k, v in scores.items %}{% if k == key %}
+        <div style="margin-bottom:.5rem"><div class="scores"><span>{{ label }}</span><b>{{ v }}</b></div><div class="meter"><i style="width:{% widthratio v 5 100 %}%"></i></div></div>
+        {% endif %}{% endfor %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if app.is_open %}
+    <div class="card"><h2>{% if my_review %}Update your review{% else %}Your review{% endif %}</h2>
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="review">
+        {% include "candidates/_field.html" with f=review_form.recommendation %}
+        <p class="muted" style="margin:.8rem 0 .2rem;font-size:.85rem">Score 1 (weak) to 5 (strong)</p>
+        {% for key, label in criteria %}
+          {% for f in review_form %}{% if f.name == key %}
+          <div class="score-row"><span>{{ label }}</span><div class="radios">{% for r in f %}<label>{{ r.tag }} {{ r.choice_label }}</label>{% endfor %}</div></div>
+          {% for e in f.errors %}<p class="err">{{ e }}</p>{% endfor %}
+          {% endif %}{% endfor %}
+        {% endfor %}
+        <div style="margin-top:.8rem">{% include "candidates/_field.html" with f=review_form.comments %}</div>
+        <button class="btn btn-dark" style="margin-top:10px">Save review</button>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if decision_form and decision_form.fields.to_status.choices %}
+    <div class="card" style="border-top:4px solid var(--gold)"><h2>Executive decision</h2>
+      {% for e in decision_form.non_field_errors %}<div class="alert alert-err">{{ e }}</div>{% endfor %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="decide">
+        {% include "candidates/_field.html" with f=decision_form.to_status %}
+        <div style="margin-top:.7rem">{% include "candidates/_field.html" with f=decision_form.interview_at %}</div>
+        <div style="margin-top:.7rem">{% include "candidates/_field.html" with f=decision_form.interview_place %}</div>
+        <div style="margin-top:.7rem">{% include "candidates/_field.html" with f=decision_form.applicant_message %}</div>
+        <div style="margin-top:.7rem">{% include "candidates/_field.html" with f=decision_form.note %}</div>
+        <button class="btn btn-green" style="margin-top:10px">Apply decision</button>
+      </form>
+    </div>
+    {% endif %}
+
+    <div class="card"><h2>Same seat ({{ rivals|length }})</h2>
+      {% for r in rivals %}
+        <div class="score-row"><a href="{% url 'candidate_db:detail' r.pk %}">{{ r.full_name }}</a><span class="pill {{ r.status }}">{{ r.get_status_display }}</span></div>
+      {% empty %}<p class="muted mt0">No other applicants for {{ app.electorate.name }}.</p>{% endfor %}
+    </div>
+
+    <div class="card"><h2>History</h2>
+      <ul class="timeline">
+        {% for e in events %}
+          <li><b>{% if e.to_status %}{{ e.from_status|default:"–" }} → {{ e.to_status }}{% else %}Note{% endif %}</b><br>
+            <small class="muted">{{ e.at|date:"j M Y H:i" }}{% if e.actor %} · {{ e.actor.get_full_name|default:e.actor.username }}{% endif %}</small>
+            {% if e.note %}<div>{{ e.note }}</div>{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "portal/base.html" %}
+{% block title %}Candidate database{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">Candidate database</span><h1>Candidates</h1></div>
+  <div>
+    {% if user.is_exec %}<a class="btn btn-outline" href="?{{ querystring }}{% if querystring %}&{% endif %}export=csv">Export CSV</a>{% endif %}
+    <a class="btn btn-outline" href="{% url 'candidates:apply' %}" target="_blank">Application form</a>
+  </div>
+</div>
+
+<nav class="tabs">
+  <a href="?" class="{% if not st and not flagged %}on{% endif %}">All ({{ total }})</a>
+  <a href="?status=open" class="{% if st == 'open' %}on{% endif %}">To review</a>
+  {% for code, label in statuses %}
+    <a href="?status={{ code }}" class="{% if st == code %}on{% endif %}">{{ label }}{% for k, v in counts.items %}{% if k == code %} ({{ v }}){% endif %}{% endfor %}</a>
+  {% endfor %}
+  <a href="?flagged=1" class="{% if flagged %}on{% endif %}">Possible duplicates</a>
+</nav>
+
+<form class="filters card" method="get">
+  <div class="field grow"><label>Search</label><input type="text" name="q" value="{{ q }}" placeholder="Name, reference, candidate no., phone or seat"></div>
+  <div class="field"><label>Province</label>
+    <select name="province"><option value="">All provinces</option>
+      {% for p in provinces %}<option value="{{ p.pk }}"{% if prov == p.pk|stringformat:"s" %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
+    </select></div>
+  <div class="field"><label>Gender</label><select name="gender"><option value="">Any</option><option value="F"{% if gender == "F" %} selected{% endif %}>Female</option><option value="M"{% if gender == "M" %} selected{% endif %}>Male</option></select></div>
+  {% if st %}<input type="hidden" name="status" value="{{ st }}">{% endif %}
+  <button class="btn btn-dark" type="submit">Filter</button>
+</form>
+
+<form method="post" action="{% url 'candidate_db:cards_batch' %}" target="_blank">{% csrf_token %}
+<div class="bulk">
+  <b>Candidate ID cards</b> <span class="muted">tick endorsed candidates, then print:</span>
+  <button class="btn btn-gold" name="layout" value="a4-10">A4 · 10 per sheet</button>
+  <button class="btn btn-outline" name="layout" value="a4-8">A4 · 8 per sheet</button>
+  <button class="btn btn-outline" name="layout" value="cr80">CR80 card printer</button>
+</div>
+<div class="card" style="padding:6px 10px">
+  <div class="tbl-wrap">
+  <table class="tbl">
+    <thead><tr><th></th><th>Applicant</th><th>Seat</th><th class="hide-sm">Occupation</th><th class="hide-sm">Reviews</th><th>Status</th><th class="hide-sm">Submitted</th></tr></thead>
+    <tbody>
+    {% for a in page %}
+      <tr>
+        <td>{% if a.status == "APPROVED" %}<input type="checkbox" name="ids" value="{{ a.pk }}" aria-label="Select {{ a.full_name }}">{% endif %}</td>
+        <td><a class="name" href="{% url 'candidate_db:detail' a.pk %}">{{ a.full_name }}</a><br><small class="muted">{{ a.candidate_number|default:a.reference }} · {{ a.get_gender_display }}</small></td>
+        <td>{{ a.electorate.name }}<br><small class="muted">{{ a.electorate.province.name }}</small>{% if a.seat_rivals %}<br><small style="color:var(--bad)">+{{ a.seat_rivals }} other applicant{{ a.seat_rivals|pluralize }}</small>{% endif %}</td>
+        <td class="hide-sm">{{ a.occupation }}</td>
+        <td class="hide-sm">{{ a.review_count }}</td>
+        <td><span class="pill {{ a.status }}">{{ a.get_status_display }}</span>{% if a.flagged %} <span class="pill flag" title="{{ a.flag_reason }}">Check duplicate</span>{% endif %}</td>
+        <td class="hide-sm">{{ a.created_at|date:"j M Y" }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="muted" style="padding:28px;text-align:center">No applications match.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+</form>
+{% if page.has_other_pages %}
+<div class="pager">
+  {% if page.has_previous %}<a class="btn btn-outline" href="?{{ querystring }}{% if querystring %}&{% endif %}page={{ page.previous_page_number }}">&larr; Previous</a>{% endif %}
+  <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a class="btn btn-outline" href="?{{ querystring }}{% if querystring %}&{% endif %}page={{ page.next_page_number }}">Next &rarr;</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

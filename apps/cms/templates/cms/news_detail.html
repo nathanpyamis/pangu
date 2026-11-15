@@ -1,0 +1,12 @@
+{% extends "cms/base.html" %}
+{% block title %}{{ post.title }} | {{ party.name }}{% endblock %}
+{% block description %}{{ post.summary|default:post.title }}{% endblock %}
+{% block content %}
+<article class="article">
+  <div class="meta">{{ post.get_kind_display }}{% if post.published_at %} · {{ post.published_at|date:'j F Y' }}{% endif %}</div>
+  <h1>{{ post.title }}</h1>
+  {% if post.cover_image %}<img class="cover" src="{{ post.cover_image.url }}" alt="">{% endif %}
+  <div class="content">{{ post.body|linebreaks }}</div>
+  <p style="margin-top:40px"><a class="btn btn-ghost" href="{% url 'home' %}#news">← All news</a></p>
+</article>
+{% endblock %}

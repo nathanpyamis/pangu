@@ -1,0 +1,40 @@
+{% extends "cms/base.html" %}
+{% block title %}Application status – {{ party.name }}{% endblock %}
+{% block content %}
+<div class="page-wrap" style="max-width:760px">
+  <div class="page-head">
+    <div class="kicker">Candidate selection</div>
+    <h1>Check my application</h1>
+    <p>Enter your reference number and the phone number you applied with.</p>
+  </div>
+  <div class="form-card">
+    {% for e in form.non_field_errors %}<div class="alert alert-err">{{ e }}</div>{% endfor %}
+    <form method="post" novalidate>{% csrf_token %}
+      <div class="form-grid">
+        {% include "candidates/_field.html" with f=form.reference %}
+        {% include "candidates/_field.html" with f=form.phone %}
+      </div>
+      <div class="form-actions"><button class="btn btn-gold" type="submit">Check status</button></div>
+    </form>
+  </div>
+  {% if app %}
+  <div class="form-card" style="margin-top:22px">
+    <h3 style="font-size:20px;margin-bottom:4px">{{ app.full_name }} · {{ app.electorate.name }}</h3>
+    <p class="muted">Reference <b>{{ app.reference }}</b> · submitted {{ app.created_at|date:"j M Y" }}</p>
+    {% if app.status == "REJECTED" or app.status == "WITHDRAWN" %}
+      <p><span class="pill">{{ app.get_status_display }}</span></p>
+    {% else %}
+      <ol class="track">
+        {% for code, label in steps %}
+          <li class="{% if forloop.counter0 < step_index %}done{% elif forloop.counter0 == step_index %}done now{% endif %}">{{ label }}</li>
+        {% endfor %}
+      </ol>
+    {% endif %}
+    {% if app.status == "INTERVIEW" and app.interview_at %}
+      <div class="alert alert-warn"><b>Interview:</b> {{ app.interview_at|date:"l j F Y, g:i A" }}{% if app.interview_place %} at {{ app.interview_place }}{% endif %}</div>
+    {% endif %}
+    {% if app.applicant_message %}<div class="alert alert-ok">{{ app.applicant_message|linebreaksbr }}</div>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

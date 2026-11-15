@@ -1,0 +1,334 @@
+{% extends "cms/base.html" %}
+{% block content %}
+
+<!-- ================= HERO ================= -->
+<section class="hero" id="home">
+  <div class="hero-text">
+    <div class="kicker">{{ party.election_name }}</div>
+    <h1 class="hero-name">{{ party.name_first }} <span>{{ party.name_rest }}</span></h1>
+    <p class="hero-headline"><span class="rotator" data-lines="{{ party.rotating_lines }}">{{ party.tagline }}</span></p>
+    {% if party.intro %}<p class="hero-intro">{{ party.intro }}</p>{% endif %}
+    <div class="hero-actions">
+      <a class="btn btn-gold" href="#join">Join Pangu</a>
+      {% if party.applications_are_open %}<a class="btn btn-ghost" href="#candidates">Stand as a candidate</a>{% else %}<a class="btn btn-ghost" href="#policies">Read the Policies</a>{% endif %}
+    </div>
+    {% if party.election_date %}
+    <div class="countdown" data-date="{{ party.election_date|date:'Y-m-d' }}" aria-label="Countdown to polling">
+      <div><b data-unit="days">-</b><span>Days</span></div>
+      <div><b data-unit="hours">-</b><span>Hours</span></div>
+      <div><b data-unit="minutes">-</b><span>Mins</span></div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="hero-photo leaders">
+    <figure>
+      <img src="{{ party_header }}" alt="{{ party.name }} leaders, past and present" width="896" height="1195" fetchpriority="high">
+      {% if party.header_caption %}<figcaption>{{ party.header_caption }}</figcaption>{% endif %}
+    </figure>
+    <div class="badge"><small>{{ party.name }}</small>{% if party.founded %}Since {{ party.founded|date:"Y" }}{% else %}{{ party.tagline }}{% endif %}</div>
+  </div>
+
+  <div class="side side-left"><span class="side-label">Papua New Guinea · 2027</span></div>
+  {% if party.socials %}<div class="side side-right"><ul class="socials">{% include "cms/_socials.html" %}</ul></div>{% endif %}
+</section>
+
+<!-- ================= STATS ================= -->
+<div class="stats-strip">
+  {% if party.founded %}<div><b>{{ party.founded|date:"Y" }}</b><span>Founded</span></div>{% endif %}
+  <div><b>{{ stats.provinces }}</b><span>Provinces</span></div>
+  <div><b>{{ stats.members }}</b><span>Verified members</span></div>
+  <div><b>{{ stats.endorsed }}</b><span>Endorsed candidates</span></div>
+</div>
+
+<!-- ================= ABOUT ================= -->
+<section class="panel{% if open_panel == 'about' %} is-open{% endif %}" id="about" aria-label="About">
+  <a class="panel-close" href="#home" aria-label="Close"></a>
+  <div class="panel-inner about">
+    <div class="heading"><p>Get to know</p><h2>About {{ party.name }}</h2><div class="bar"></div></div>
+    <div class="about-grid">
+      <div class="about-photo"><img src="{{ party_header }}" alt="{{ party.name }} leaders" loading="lazy" width="896" height="1195"></div>
+      <div>
+        <h3>Who is {{ party.name }}?</h3>
+        <h4>{{ party.tagline }}</h4>
+        <div class="bio">{% for para in party.about_paragraphs %}<p>{{ para }}</p>{% endfor %}</div>
+        <address class="info">
+          <div><span>Party</span><b>{{ party.name }}</b></div>
+          {% if party.founded %}<div><span>Founded</span><b>{{ party.founded|date:"j F Y" }}</b></div>{% endif %}
+          <div><span>Election</span><b>{{ party.election_name }}</b></div>
+          <div><span>Verified members</span><b>{{ stats.members }}</b></div>
+        </address>
+        <div class="hero-actions" style="margin-top:0">
+          <a class="btn btn-gold" href="#join">Join Pangu</a>
+          <a class="btn btn-ghost" href="#contact">Contact the Party</a>
+        </div>
+      </div>
+    </div>
+
+    {% if leaders %}
+    <div class="subheading"><p>National Executive</p><h3>Leadership</h3></div>
+    <div class="leaders-grid">
+      {% for l in leaders %}
+      <article class="leader">
+        {% if l.photo %}<img src="{{ l.photo.url }}" alt="{{ l.name }}" loading="lazy">{% else %}<div class="ph">{{ l.name|slice:":1" }}</div>{% endif %}
+        <div><h4>{{ l.name }}</h4><p>{{ l.title }}</p></div>
+      </article>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if policies %}
+    <div class="subheading"><p>What Pangu stands for</p><h3>Policy priorities</h3></div>
+    <div class="cards">
+      {% for p in policies %}
+      <div class="card"><div class="icon">{% include "cms/_pillar_icon.html" %}</div><h4>{{ p.pillar_label }}</h4><p>{{ p.title }}</p></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ================= POLICIES ================= -->
+<section class="panel{% if open_panel == 'policies' %} is-open{% endif %}" id="policies" aria-label="Policies">
+  <a class="panel-close" href="#home" aria-label="Close"></a>
+  <div class="panel-inner">
+    <div class="heading"><p>The plan for Papua New Guinea</p><h2>Policies</h2><div class="bar"></div></div>
+    <div class="cards">
+      {% for p in policies %}
+      <article class="card">
+        <div class="icon">{% include "cms/_pillar_icon.html" %}</div>
+        <span class="tag">{{ p.pillar_label }}</span>
+        <h4>{{ p.title }}</h4>
+        <p>{{ p.summary }}</p>
+        {% if p.pdf %}<a class="more" href="{{ p.pdf.url }}" target="_blank" rel="noopener">Download PDF →</a>{% endif %}
+      </article>
+      {% empty %}
+      <p class="empty" style="grid-column:1/-1">Policies will be published here soon.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ================= CANDIDATES ================= -->
+<section class="panel{% if open_panel == 'candidates' %} is-open{% endif %}" id="candidates" aria-label="Candidates">
+  <a class="panel-close" href="#home" aria-label="Close"></a>
+  <div class="panel-inner">
+    <div class="heading"><p>{{ party.election_name }}</p><h2>Stand for {{ party.short_name }}</h2><div class="bar"></div></div>
+    <div class="steps">
+      <div class="card step"><span class="num">01</span><h4>Apply online</h4><p>Fill in the form, upload your photo and CV, and get a reference number.</p></div>
+      <div class="card step"><span class="num">02</span><h4>Provincial review</h4><p>Your provincial coordinator checks your details and referees and scores your application.</p></div>
+      <div class="card step"><span class="num">03</span><h4>Executive vetting</h4><p>Shortlisted applicants are interviewed by the National Executive.</p></div>
+      <div class="card step"><span class="num">04</span><h4>Endorsement</h4><p>Endorsed candidates receive an endorsement letter and a candidate ID card. One candidate per seat.</p></div>
+    </div>
+    <div class="join-wrap" style="margin-top:48px">
+      <aside class="join-aside">
+        <h3>What you need</h3>
+        <ol>
+          <li>Be a PNG citizen aged 25 or older on polling day.</li>
+          <li>A clear head-and-shoulders photo and your CV.</li>
+          <li>NID card or birth certificate copy, and police clearance if you have it.</li>
+          <li>Two referees with phone numbers.</li>
+          <li>If you belong to another party, agree to resign before nomination.</li>
+        </ol>
+      </aside>
+      <div class="form-card deadline">
+        {% if party.applications_are_open %}
+          <h3>Applications are open</h3>
+          <p class="muted">{% if party.applications_close %}Applications close <b>{{ party.applications_close|date:"j F Y" }}</b>.{% else %}Apply as early as you can.{% endif %} The form takes about 15 minutes.</p>
+          <div class="form-actions"><a class="btn btn-gold" href="{% url 'candidates:apply' %}">Start application</a><a class="btn btn-ghost" href="{% url 'candidates:status' %}">Check my application</a></div>
+        {% else %}
+          <h3>Applications are closed</h3>
+          <p class="muted">Candidate applications are not open right now.</p>
+          <div class="form-actions"><a class="btn btn-ghost" href="{% url 'candidates:status' %}">Check my application</a></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= NEWS ================= -->
+<section class="panel{% if open_panel == 'news' %} is-open{% endif %}" id="news" aria-label="News">
+  <a class="panel-close" href="#home" aria-label="Close"></a>
+  <div class="panel-inner">
+    <div class="heading"><p>From the party</p><h2>News &amp; Updates</h2><div class="bar"></div></div>
+    <div class="cards">
+      {% for post in news %}
+      <article class="card post">
+        <a class="thumb" href="{% url 'news_detail' post.slug %}" tabindex="-1">
+          {% if post.cover_image %}<img src="{{ post.cover_image.url }}" alt="" loading="lazy">{% endif %}
+          {% if post.published_at %}<span class="date">{{ post.published_at|date:'j M Y' }}</span>{% endif %}
+        </a>
+        <div class="body">
+          <span class="tag">{{ post.get_kind_display }}</span>
+          <h4><a href="{% url 'news_detail' post.slug %}">{{ post.title }}</a></h4>
+          {% if post.summary %}<p>{{ post.summary }}</p>{% endif %}
+        </div>
+      </article>
+      {% empty %}
+      <p class="empty" style="grid-column:1/-1">No news yet. Rally updates and press releases will appear here.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ================= JOIN ================= -->
+<section class="panel{% if open_panel == 'join' %} is-open{% endif %}" id="join" aria-label="Join the Party">
+  <a class="panel-close" href="#home" aria-label="Close"></a>
+  <div class="panel-inner">
+    <div class="heading"><p>{{ party.tagline }}</p><h2>Join {{ party.name }}</h2><div class="bar"></div></div>
+
+    {% if join_done %}
+    <div class="notice">
+      <h3>Thank you, {{ joined_name }}!</h3>
+      <p>Your registration has been received. A provincial coordinator will verify it, and you will be contacted about your membership card.</p>
+      <a class="btn btn-gold" href="#home">Back to home</a>
+    </div>
+    {% else %}
+    <div class="join-wrap">
+      <aside class="join-aside">
+        <h3>How it works</h3>
+        <ol>
+          <li>Fill in your details. It takes about two minutes.</li>
+          <li>A provincial coordinator verifies your registration.</li>
+          <li>Once verified, you receive a membership number and an ID card with a QR code.</li>
+        </ol>
+        <p class="muted">No internet where you live? Party field agents register members in villages, offline.</p>
+      </aside>
+
+      <form class="form-card" method="post" action="{% url 'join' %}" enctype="multipart/form-data" novalidate data-join-form>
+        {% csrf_token %}
+        {% if jf.non_field %}<ul class="form-errors">{% for e in jf.non_field %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        <div class="form-grid">
+          <div class="field full{% if jf.errors.full_name %} has-error{% endif %}">
+            <label for="j-name">Full name</label>
+            <input id="j-name" name="full_name" value="{{ jf.val.full_name }}" autocomplete="name" required>
+            {% for e in jf.errors.full_name %}<p class="err">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field{% if jf.errors.gender %} has-error{% endif %}">
+            <label>Gender</label>
+            <div class="radios">
+              <label><input type="radio" name="gender" value="M" {% if jf.val.gender == "M" %}checked{% endif %}> Male</label>
+              <label><input type="radio" name="gender" value="F" {% if jf.val.gender == "F" %}checked{% endif %}> Female</label>
+            </div>
+            {% for e in jf.errors.gender %}<p class="err">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field{% if jf.errors.date_of_birth %} has-error{% endif %}">
+            <label for="j-dob">Date of birth</label>
+            <input id="j-dob" type="date" name="date_of_birth" value="{{ jf.val.date_of_birth }}">
+            {% for e in jf.errors.date_of_birth %}<p class="err">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field{% if jf.errors.nid_number %} has-error{% endif %}">
+            <label for="j-nid">NID number <small>(if you have one)</small></label>
+            <input id="j-nid" name="nid_number" value="{{ jf.val.nid_number }}" autocomplete="off">
+            {% for e in jf.errors.nid_number %}<p class="err">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field{% if jf.errors.phone_number %} has-error{% endif %}">
+            <label for="j-phone">Phone</label>
+            <input id="j-phone" name="phone_number" type="tel" inputmode="tel" placeholder="7xxx xxxx" value="{{ jf.val.phone_number }}" autocomplete="tel">
+            {% for e in jf.errors.phone_number %}<p class="err">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field full{% if jf.errors.electorate %} has-error{% endif %}">
+            <label for="j-elec">Electorate</label>
+            <select id="j-elec" name="electorate" required>
+              <option value="">Select your electorate…</option>
+              {% for g in electorate_groups %}
+              <optgroup label="{{ g.province }}">
+                {% for e in g.electorates %}<option value="{{ e.id }}" {% if jf.val.electorate == e.id %}selected{% endif %}>{{ e.label }}</option>{% endfor %}
+              </optgroup>
+              {% endfor %}
+            </select>
+            {% for e in jf.errors.electorate %}<p class="err">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field">
+            <label for="j-ward">LLG / Ward</label>
+            <input id="j-ward" name="llg_ward" value="{{ jf.val.llg_ward }}">
+          </div>
+          <div class="field">
+            <label for="j-village">Village / Street</label>
+            <input id="j-village" name="village_or_street" value="{{ jf.val.village_or_street }}">
+          </div>
+          <div class="field full{% if jf.errors.residential_address %} has-error{% endif %}">
+            <label for="j-address">Residential address *</label>
+            <textarea id="j-address" name="residential_address" rows="2" maxlength="255" required
+              placeholder="e.g. Section 12 Lot 4, Butibam Road, Lae — or near the church, Gabensis village">{{ jf.val.residential_address }}</textarea>
+            {% for e in jf.errors.residential_address %}<p class="err">{{ e }}</p>{% endfor %}
+          </div>
+
+          <div class="field full{% if jf.errors.photo %} has-error{% endif %}">
+            <label for="j-photo">Photo for your ID card <small>(optional, clear face photo)</small></label>
+            <div class="photo-pick">
+              <img alt="" hidden data-photo-preview>
+              <input id="j-photo" type="file" name="photo" accept="image/*">
+            </div>
+            {% for e in jf.errors.photo %}<p class="err">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field full{% if jf.errors.consent %} has-error{% endif %}">
+            <label class="check"><input type="checkbox" name="consent" value="on" {% if jf.val.consent %}checked{% endif %}>
+              I want to join {{ party.name }} and agree that my details are stored by the party for membership purposes.</label>
+            {% for e in jf.errors.consent %}<p class="err">{{ e }}</p>{% endfor %}
+          </div>
+          <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-gold" type="submit">Submit registration</button>
+          <span class="muted" data-photo-status></span>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ================= CONTACT ================= -->
+<section class="panel{% if open_panel == 'contact' %} is-open{% endif %}" id="contact" aria-label="Contact">
+  <a class="panel-close" href="#home" aria-label="Close"></a>
+  <div class="panel-inner">
+    <div class="heading"><p>We would like to hear from you</p><h2>Get in Touch</h2><div class="bar"></div></div>
+    <div class="contact-grid">
+      {% if contact_done %}
+      <div class="notice"><h3>Message sent</h3><p>Thank you. The party secretariat will get back to you.</p></div>
+      {% else %}
+      <form class="form-card" method="post" action="{% url 'contact' %}" novalidate>
+        {% csrf_token %}
+        <div class="form-grid">
+          <div class="field{% if cf.errors.name %} has-error{% endif %}">
+            <label for="c-name">Name</label>
+            <input id="c-name" name="name" value="{{ cf.val.name }}" autocomplete="name" required>
+            {% for e in cf.errors.name %}<p class="err">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field{% if cf.errors.phone_or_email %} has-error{% endif %}">
+            <label for="c-reach">Phone or email</label>
+            <input id="c-reach" name="phone_or_email" value="{{ cf.val.phone_or_email }}" required>
+            {% for e in cf.errors.phone_or_email %}<p class="err">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field full">
+            <label for="c-subject">Subject</label>
+            <input id="c-subject" name="subject" value="{{ cf.val.subject }}">
+          </div>
+          <div class="field full{% if cf.errors.message %} has-error{% endif %}">
+            <label for="c-msg">Message</label>
+            <textarea id="c-msg" name="message" required>{{ cf.val.message }}</textarea>
+            {% for e in cf.errors.message %}<p class="err">{{ e }}</p>{% endfor %}
+          </div>
+          <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        </div>
+        <div class="form-actions"><button class="btn btn-gold" type="submit">Send message</button></div>
+      </form>
+      {% endif %}
+
+      <div>
+        <h3 style="font-size:22px;margin-bottom:10px">Party secretariat</h3>
+        <p class="muted">Visit, call or message the {{ party.name }} secretariat.</p>
+        <ul class="contact-list" style="margin-top:26px">
+          {% if party.office_address %}<li><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></span><div><span>Office</span>{{ party.office_address }}</div></li>{% endif %}
+          {% if party.phone %}<li><span class="icon"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></span><div><span>Call</span><a href="tel:{{ party.phone }}">{{ party.phone }}</a></div></li>{% endif %}
+          {% if party.email %}<li><span class="icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 6l8 7 8-7"/></svg></span><div><span>Email</span><a href="mailto:{{ party.email }}">{{ party.email }}</a></div></li>{% endif %}
+          <li><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 11l18-8-8 18-2-8z"/></svg></span><div><span>Field officers</span>Register members in your village, even with no signal</div></li>
+        </ul>
+        {% if party.socials %}<ul class="socials" style="flex-direction:row;margin-top:28px">{% include "cms/_socials.html" %}</ul>{% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "portal/base.html" %}
+{% block title %}Overall progress{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">{{ scope_label }} · {{ party.election_name }}</span><h1>Overall progress</h1></div>
+  {% if party.election_date %}<div class="muted">Polling day <b>{{ party.election_date|date:"j F Y" }}</b> · <b>{{ party.election_date|timeuntil }}</b> to go</div>{% endif %}
+</div>
+
+<!-- Headline numbers -->
+<div class="kpis">
+  <a class="kpi" href="{% url 'portal:members' %}"><span>Members registered</span><b>{{ m.total }}</b><small>+{{ m.week }} in the last 7 days</small></a>
+  <a class="kpi" href="{% url 'portal:members' %}?state=verified"><span>Verified members</span><b>{{ m.verified }}</b><small>{{ m.verified_pct }}% of registrations</small></a>
+  <a class="kpi" href="{% url 'portal:members' %}?state=pending"><span>Waiting for verification</span><b>{{ m.pending }}</b><small>{{ m.flagged }} flagged as possible duplicates</small></a>
+  <a class="kpi" href="{% url 'portal:members' %}?card=unprinted"><span>Member cards printed</span><b>{{ m.printed }}</b><small>{{ m.printed_pct }}% of verified members</small></a>
+  <a class="kpi" href="{% url 'candidate_db:database' %}"><span>Candidate applications</span><b>{{ c_total }}</b><small>{{ c_open }} still open</small></a>
+  <a class="kpi" href="{% url 'candidate_db:database' %}?status=APPROVED"><span>Seats with an endorsed candidate</span><b>{{ endorsed_seats }}<span style="font-size:16px;color:var(--muted)"> / {{ seats_total }}</span></b><small>{{ coverage_pct }}% of seats covered</small></a>
+  <a class="kpi" href="{% url 'staff:list' %}"><span>Active field agents</span><b>{{ agent_totals.total }}</b><small>{{ agent_totals.active_week }} synced in the last 7 days</small></a>
+</div>
+
+<div class="grid-2">
+  <div>
+    <!-- Registrations per day -->
+    <div class="card">
+      <h2>Members registered per day <span class="muted" style="text-transform:none;letter-spacing:0">last 14 days · peak {{ peak }}</span></h2>
+      <div class="bars" role="img" aria-label="Members registered per day over the last 14 days">
+        {% for d in daily %}<div class="b"><span class="tip">{{ d.day|date:"D j M" }}: {{ d.n }}</span><i style="height:{{ d.h }}%"></i></div>{% endfor %}
+      </div>
+      <div class="bar-labels">{% for d in daily %}<span>{% if forloop.first or forloop.last or forloop.counter0|divisibleby:3 %}{{ d.day|date:"j/n" }}{% endif %}</span>{% endfor %}</div>
+      <details style="margin-top:10px"><summary class="muted" style="cursor:pointer;font-size:13px">Show as table</summary>
+        <table class="tbl" style="margin-top:8px"><thead><tr><th>Day</th><th class="num">Registered</th></tr></thead>
+          <tbody>{% for d in daily %}<tr><td>{{ d.day|date:"l j M" }}</td><td class="num">{{ d.n }}</td></tr>{% endfor %}</tbody></table>
+      </details>
+    </div>
+
+    <!-- By province -->
+    <div class="card">
+      <h2>Progress by province <a href="{% url 'portal:members' %}?export=csv">Export members (CSV)</a></h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr>
+          <th>Province</th><th class="num">Members</th><th>Verified</th><th class="num hide-sm">Cards</th>
+          <th class="num hide-sm">Applications</th><th>Seats endorsed</th><th class="num hide-sm">Agents</th>
+        </tr></thead>
+        <tbody>
+        {% for r in rows %}
+          <tr>
+            <td><a class="name" href="{% url 'portal:members' %}?province={{ r.province.pk }}">{{ r.province.name }}</a><br><small class="muted">{{ r.region }}</small></td>
+            <td class="num">{{ r.members }}</td>
+            <td style="min-width:120px"><div class="meter" title="{{ r.verified }} of {{ r.members }} verified"><i style="width:{{ r.verified_pct }}%"></i></div><span class="pct">{{ r.verified }} · {{ r.verified_pct }}%</span></td>
+            <td class="num hide-sm">{{ r.printed }}</td>
+            <td class="num hide-sm"><a href="{% url 'candidate_db:database' %}?province={{ r.province.pk }}">{{ r.applications }}</a>{% if r.open %} <small class="muted">({{ r.open }} open)</small>{% endif %}</td>
+            <td style="min-width:120px"><div class="meter gold" title="{{ r.endorsed }} of {{ r.seats }} seats"><i style="width:{{ r.coverage_pct }}%"></i></div><span class="pct">{{ r.endorsed }} / {{ r.seats }}</span></td>
+            <td class="num hide-sm">{{ r.agents }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="muted">No provinces yet. Run <code>python manage.py seed_provinces</code>.</td></tr>
+        {% endfor %}
+        </tbody>
+        {% if rows|length > 1 %}
+        <tfoot><tr>
+          <td>Total</td><td class="num">{{ totals.members }}</td><td>{{ totals.verified }}</td><td class="num hide-sm">{{ totals.printed }}</td>
+          <td class="num hide-sm">{{ totals.applications }}</td><td>{{ totals.endorsed }} / {{ totals.seats }}</td><td class="num hide-sm">{{ totals.agents }}</td>
+        </tr></tfoot>
+        {% endif %}
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <!-- Candidate pipeline -->
+    <div class="card">
+      <h2>Candidate pipeline <a href="{% url 'candidate_db:database' %}">Candidate database</a></h2>
+      {% for code, label, n in pipeline %}
+        <div class="score-row"><a href="{% url 'candidate_db:database' %}?status={{ code }}"><span class="pill {{ code }}">{{ label }}</span></a><b>{{ n }}</b></div>
+      {% endfor %}
+      <div class="score-row"><a href="{% url 'candidate_db:database' %}?flagged=1"><span class="pill flag">Possible duplicates</span></a><b>{{ c_flagged }}</b></div>
+      <p class="muted" style="margin:12px 0 0;font-size:13px">{{ seats_with_applicants }} of {{ seats_total }} seats ({{ applicant_pct }}%) have at least one live applicant.</p>
+    </div>
+
+    <div class="card">
+      <h2>Most contested seats</h2>
+      {% for c in contested %}
+        <div class="score-row"><a href="{% url 'candidate_db:database' %}?q={{ c.electorate__name|urlencode }}">{{ c.electorate__name }}</a><span><b>{{ c.n }}</b> <small class="muted">applicants</small></span></div>
+      {% empty %}<p class="muted mt0">No seat has more than one applicant yet.</p>{% endfor %}
+    </div>
+
+    <!-- Members mix -->
+    <div class="card">
+      <h2>Membership mix</h2>
+      <div class="score-row"><span>Registered by field agents</span><b>{{ m.field }}</b></div>
+      <div class="score-row"><span>Joined online</span><b>{{ m.online }}</b></div>
+      <div class="score-row"><span>Women</span><b>{{ m.female }} <small class="muted">({{ m.female_pct }}%)</small></b></div>
+    </div>
+
+    <!-- Field agents -->
+    <div class="card">
+      <h2>Top field agents <a href="{% url 'staff:list' %}">Field officers</a></h2>
+      {% for a in agents %}
+        <div class="score-row"><span><b>{{ a.get_full_name|default:a.username }}</b><br><small class="muted">{{ a.assigned_electorate.name|default:"No electorate" }} · {% if a.last_sync %}synced {{ a.last_sync|timesince }} ago{% else %}never synced{% endif %}</small></span><b>{{ a.registered }}</b></div>
+      {% empty %}<p class="muted mt0">No field agents yet. Add users with the Field Agent role in Admin.</p>{% endfor %}
+      <p class="muted" style="margin:10px 0 0;font-size:13px">{{ cards_issued }} staff ID card{{ cards_issued|pluralize }} issued.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

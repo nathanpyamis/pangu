@@ -1,0 +1,53 @@
+{% extends "portal/base.html" %}
+{% block title %}Field officers{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">Staff ID cards</span><h1>Field officers</h1></div>
+  {% if user.is_staff %}<a class="btn btn-outline" href="/admin/accounts/user/add/">Add a user in Admin</a>{% endif %}
+</div>
+
+<form class="card filters" method="get">
+  <div class="field grow"><label>Search</label><input name="q" value="{{ q }}" placeholder="Name, username or staff no."></div>
+  {% if user.is_exec %}<div class="field"><label>Role</label><select name="role"><option value="">Agents and coordinators</option><option value="AGENT"{% if role == "AGENT" %} selected{% endif %}>Field agents</option><option value="COORDINATOR"{% if role == "COORDINATOR" %} selected{% endif %}>Provincial coordinators</option></select></div>{% endif %}
+  <div class="field"><label>Card</label><select name="card">
+    <option value="">Any</option>
+    <option value="none"{% if card == "none" %} selected{% endif %}>No card issued</option>
+    <option value="unprinted"{% if card == "unprinted" %} selected{% endif %}>Issued, not printed</option>
+    <option value="suspended"{% if card == "suspended" %} selected{% endif %}>Suspended</option>
+  </select></div>
+  <button class="btn btn-dark" type="submit">Filter</button>
+</form>
+
+<form method="post" action="{% url 'staff:cards_batch' %}" target="_blank">{% csrf_token %}
+  <div class="bulk">
+    <b>Officer ID cards</b> <span class="muted">tick officers, then print (numbers are issued automatically):</span>
+    <button class="btn btn-gold" name="layout" value="a4-10">A4 · 10 per sheet</button>
+    <button class="btn btn-outline" name="layout" value="a4-8">A4 · 8 per sheet</button>
+    <button class="btn btn-outline" name="layout" value="cr80">CR80 card printer</button>
+  </div>
+  <div class="card" style="padding:6px 10px">
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th></th><th></th><th>Officer</th><th>Role and area</th><th class="num">Registered</th><th class="hide-sm">Last sync</th><th>Card</th></tr></thead>
+      <tbody>
+      {% for s in staff %}
+        {% with p=s.staff_profile %}
+        <tr>
+          <td>{% if s.is_active %}<input type="checkbox" name="ids" value="{{ s.pk }}" aria-label="Select {{ s }}">{% endif %}</td>
+          <td>{% if p.photo %}<img class="thumb" src="{{ p.photo.url }}" alt="" loading="lazy">{% else %}<span class="thumb" style="display:inline-block"></span>{% endif %}</td>
+          <td><a class="name" href="{% url 'staff:detail' s.pk %}">{{ s.get_full_name|default:s.username }}</a><br><small class="muted">{{ p.staff_number|default:"No card yet" }}{% if not s.is_active %} · login disabled{% endif %}</small></td>
+          <td>{{ s.get_role_display }}<br><small class="muted">{% if s.assigned_electorate %}{{ s.assigned_electorate.name }}{% elif s.assigned_province %}{{ s.assigned_province.name }}{% else %}Not assigned{% endif %}</small></td>
+          <td class="num">{{ s.registered }}</td>
+          <td class="hide-sm">{% if s.last_sync %}{{ s.last_sync|timesince }} ago{% else %}<span class="muted">Never</span>{% endif %}</td>
+          <td>{% if not p.staff_number %}<span class="pill">None</span>{% elif p.card_status == "SUSPENDED" %}<span class="pill bad">Suspended</span>{% elif p.id_card_printed %}<span class="pill ok">Printed</span>{% else %}<span class="pill warn">Not printed</span>{% endif %}</td>
+        </tr>
+        {% endwith %}
+      {% empty %}
+        <tr><td colspan="7" class="muted" style="padding:28px;text-align:center">No field officers match. Add users with the Field Agent or Provincial Coordinator role in Admin → Users.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "cms/base.html" %}
+{% block title %}Applications closed – {{ party.name }}{% endblock %}
+{% block content %}
+<div class="page-wrap" style="max-width:640px;text-align:center">
+  <div class="form-card">
+    <h1 style="font-size:30px;margin-bottom:12px">Applications are closed</h1>
+    <p class="muted">{% if party.applications_close %}Candidate applications closed on {{ party.applications_close|date:"j F Y" }}.{% else %}Candidate applications are not open right now.{% endif %}</p>
+    <div class="form-actions" style="justify-content:center"><a class="btn btn-gold" href="{% url 'candidates:status' %}">Check an existing application</a></div>
+  </div>
+</div>
+{% endblock %}

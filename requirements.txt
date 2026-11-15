@@ -1,0 +1,6 @@
+# Local development (Windows/Linux). Pure pip, no system libraries.
+Django>=5.1,<5.3
+djangorestframework>=3.15
+djangorestframework-simplejwt>=5.3
+Pillow>=10.4
+reportlab>=4.2            # ID card PDFs + QR codes

@@ -1,0 +1,62 @@
+{% extends "portal/base.html" %}
+{% block title %}{{ profile.display_name }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'staff:list' %}">&larr; Field officers</a></p>
+<div class="card who">
+  {% if profile.photo %}<img src="{{ profile.photo.url }}" alt="{{ profile.display_name }}">{% endif %}
+  <div style="flex:1">
+    {% if not profile.staff_number %}<span class="pill">No card yet</span>{% elif profile.is_valid %}<span class="pill ok">Card valid</span>{% else %}<span class="pill bad">Card not valid</span>{% endif %}
+    <h1 style="margin:6px 0 2px;font-size:24px">{{ profile.display_name }}</h1>
+    <div class="muted">{{ staff_user.get_role_display }} · {{ profile.area }}{% if profile.staff_number %} · {{ profile.staff_number }}{% endif %}</div>
+    <p style="margin:12px 0 0">
+      <a class="btn btn-green" href="{% url 'staff:card' staff_user.pk %}" target="_blank">{% if profile.id_card_printed %}Reprint{% else %}Print{% endif %} officer ID card</a>
+      {% if profile.staff_number %}<a class="btn btn-outline" href="{% url 'verify_staff' profile.pk %}" target="_blank">Open QR check page</a>{% endif %}
+    </p>
+  </div>
+</div>
+
+<div class="detail">
+  <div>
+    <div class="card"><h2>Field work</h2>
+      <div class="kpis" style="margin-bottom:10px">
+        <div class="kpi"><span>Members registered</span><b>{{ registered }}</b></div>
+        <div class="kpi"><span>Of those verified</span><b>{{ verified }}</b></div>
+      </div>
+      {% if recent %}
+      <table class="tbl"><thead><tr><th>Latest registrations</th><th>Electorate</th><th>Status</th></tr></thead><tbody>
+        {% for m in recent %}<tr><td>{{ m.full_name }}<br><small class="muted">{{ m.server_synced_at|date:"j M Y" }}</small></td><td>{{ m.electorate.name }}</td><td>{% if m.review_flag %}<span class="pill flag">Check duplicate</span>{% elif m.is_verified %}<span class="pill ok">Verified</span>{% else %}<span class="pill warn">Pending</span>{% endif %}</td></tr>{% endfor %}
+      </tbody></table>
+      {% endif %}
+    </div>
+    <div class="card"><h2>Sync history</h2>
+      {% for s in syncs %}
+        <div class="score-row"><span>{{ s.received_at|date:"j M Y, H:i" }}<br><small class="muted">{{ s.records_received }} sent · {{ s.created }} new · {{ s.flagged }} flagged · {{ s.rejected }} rejected</small></span><b>{{ s.created }}</b></div>
+      {% empty %}<p class="muted mt0">This officer has not synced yet.</p>{% endfor %}
+    </div>
+  </div>
+  <div>
+    <div class="card"><h2>ID card</h2>
+      <form method="post" enctype="multipart/form-data" class="stack">{% csrf_token %}
+        {% for f in form %}
+          <div class="field{% if f.errors %} has-error{% endif %}">
+            <label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}
+            {% if f.help_text %}<p class="help">{{ f.help_text }}</p>{% endif %}
+            {% for e in f.errors %}<p class="err">{{ e }}</p>{% endfor %}
+          </div>
+        {% endfor %}
+        <p class="help">Suspending a card makes its QR check say "not valid" straight away. To stop the officer logging in too, deactivate the user in Admin.</p>
+        <button class="btn btn-dark" type="submit">Save card details</button>
+      </form>
+    </div>
+    <div class="card"><h2>Account</h2>
+      <dl class="kv">
+        <dt>Username</dt><dd>{{ staff_user.username }}</dd>
+        <dt>Phone</dt><dd>{{ staff_user.phone_number|default:"–" }}</dd>
+        <dt>Login</dt><dd>{% if staff_user.is_active %}Active{% else %}Disabled{% endif %}</dd>
+        <dt>Last login</dt><dd>{{ staff_user.last_login|date:"j M Y, H:i"|default:"Never" }}</dd>
+      </dl>
+      {% if user.is_staff %}<p style="margin:12px 0 0"><a href="/admin/accounts/user/{{ staff_user.pk }}/change/">Edit user in Admin</a></p>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

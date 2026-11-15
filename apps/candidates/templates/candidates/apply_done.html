@@ -1,0 +1,14 @@
+{% extends "cms/base.html" %}
+{% block title %}Application received – {{ party.name }}{% endblock %}
+{% block content %}
+<div class="page-wrap" style="max-width:680px;text-align:center">
+  <div class="form-card">
+    <div class="kicker" style="justify-content:center">Application received</div>
+    <h1 style="font-size:32px;margin-bottom:12px">Thank you, {{ app.preferred_name|default:app.full_name }}</h1>
+    <p class="muted">Your application to stand for <b style="color:#fff">{{ app.electorate.name }}</b> has been received. Write down your reference number. You need it, with your phone number, to check your status.</p>
+    <div class="ref-big">{{ app.reference }}</div>
+    <p class="muted">Your provincial coordinator reviews it first. Shortlisted applicants are contacted for an interview with the National Executive.</p>
+    <div class="form-actions" style="justify-content:center"><a class="btn btn-gold" href="{% url 'candidates:status' %}">Check status</a><a class="btn btn-ghost" href="{% url 'home' %}">Back to home</a></div>
+  </div>
+</div>
+{% endblock %}

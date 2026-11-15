@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#06140b">
+<title>{{ kind }} check · {{ party.name }}</title>
+<style>
+  :root { --bg:#06140b; --card:#0f2618; --line:#1e3b29; --text:#f3f6f1; --muted:#a3b3a6; --gold:#e8b422; --bad:#ff8a80; --ok:#4ade80; }
+  * { box-sizing: border-box; }
+  body { font-family: "Poppins", "Segoe UI", system-ui, Arial, sans-serif; margin: 0; background: var(--bg); color: var(--text); }
+  .stripe { height: 5px; background: linear-gradient(90deg,#0f5a2a 0%,#2f8f3a 40%,#9ab52a 70%,#e8b422 100%); }
+  .wrap { max-width: 440px; margin: 0 auto; padding: 26px 16px; }
+  .party { display:flex; align-items:center; justify-content:center; gap:10px; color: var(--gold); font-size: .75rem; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin: 0 0 16px; }
+  .party img { width: 38px; height: 38px; border-radius: 50%; background: #fff; padding: 3px; object-fit: contain; }
+  .box { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; border-top: 5px solid var(--muted); }
+  .ok { border-top-color: #22a06b; } .bad { border-top-color: var(--bad); }
+  .status { font-size: 1.3rem; font-weight: 700; margin: 0 0 16px; }
+  .ok .status { color: var(--ok); } .bad .status { color: var(--bad); }
+  .photo { width: 130px; height: 160px; object-fit: cover; border-radius: 12px; display: block; margin-bottom: 14px; border: 2px solid var(--gold); }
+  dl { margin: 0; } dt { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 12px; }
+  dd { margin: 2px 0 0; font-weight: 600; }
+  dd.num { color: var(--gold); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.05rem; }
+  p { color: var(--muted); }
+  .checked { text-align:center; font-size:.75rem; color: var(--muted); margin-top: 16px; }
+</style>
+</head>
+<body>
+<div class="stripe"></div>
+<div class="wrap">
+  <p class="party"><img src="{{ party_logo }}" alt="">{{ party.name }} · {{ kind }} check</p>
+  {% if valid %}
+  <div class="box ok">
+    <p class="status">✔ {{ valid_title }}</p>
+    {% if photo_url %}<img class="photo" src="{{ photo_url }}" alt="Photo">{% endif %}
+    <dl>
+      {% for label, value in rows %}<dt>{{ label }}</dt><dd{% if forloop.counter0 == number_row %} class="num"{% endif %}>{{ value }}</dd>{% endfor %}
+    </dl>
+  </div>
+  {% else %}
+  <div class="box bad">
+    <p class="status">✖ Card not valid</p>
+    <p>{{ invalid_text }}</p>
+  </div>
+  {% endif %}
+  <p class="checked">Checked {% now "j M Y, g:i A" %}</p>
+</div>
+</body>
+</html>

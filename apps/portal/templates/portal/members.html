@@ -1,0 +1,102 @@
+{% extends "portal/base.html" %}
+{% block title %}Members database{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">Members database</span><h1>Members</h1></div>
+  <div><a class="btn btn-outline" href="?{{ querystring }}{% if querystring %}&{% endif %}export=csv">Export CSV</a> {% if user.is_staff %}<a class="btn btn-outline" href="/admin/members/member/">Open in Admin</a>{% endif %}</div>
+</div>
+
+<div class="kpis">
+  <a class="kpi" href="?"><span>All registrations</span><b>{{ stats.total }}</b></a>
+  <a class="kpi" href="?state=verified"><span>Verified</span><b>{{ stats.verified }}</b></a>
+  <a class="kpi" href="?state=flagged"><span>Possible duplicates</span><b>{{ stats.flagged }}</b></a>
+  <a class="kpi" href="?card=unprinted"><span>Verified, card not printed</span><b>{{ stats.unprinted }}</b></a>
+</div>
+
+<form class="card filters" method="get">
+  <div class="field grow"><label>Search</label><input name="q" value="{{ q }}" placeholder="Name, membership no., phone, NID, village or address"></div>
+  <div class="field"><label>Province</label><select name="province" onchange="this.form.electorate.value='';this.form.submit()"><option value="">All provinces</option>{% for p in provinces %}<option value="{{ p.pk }}"{% if prov == p.pk|stringformat:"s" %} selected{% endif %}>{{ p.name }}</option>{% endfor %}</select></div>
+  <div class="field"><label>Electorate</label><select name="electorate"><option value="">All electorates</option>{% for e in electorates %}<option value="{{ e.pk }}"{% if elec == e.pk|stringformat:"s" %} selected{% endif %}>{{ e.name }}</option>{% endfor %}</select></div>
+  <div class="field"><label>Status</label><select name="state">
+    <option value="">Any</option>
+    <option value="verified"{% if state == "verified" %} selected{% endif %}>Verified</option>
+    <option value="pending"{% if state == "pending" %} selected{% endif %}>Waiting for verification</option>
+    <option value="flagged"{% if state == "flagged" %} selected{% endif %}>Possible duplicate</option>
+  </select></div>
+  <div class="field"><label>ID card</label><select name="card">
+    <option value="">Any</option>
+    <option value="printed"{% if card == "printed" %} selected{% endif %}>Printed</option>
+    <option value="unprinted"{% if card == "unprinted" %} selected{% endif %}>Verified, not printed</option>
+  </select></div>
+  <div class="field"><label>Source</label><select name="source"><option value="">Any</option>{% for v, l in sources %}<option value="{{ v }}"{% if source == v %} selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+  <div class="field"><label>Gender</label><select name="gender"><option value="">Any</option><option value="F"{% if gender == "F" %} selected{% endif %}>Female</option><option value="M"{% if gender == "M" %} selected{% endif %}>Male</option></select></div>
+  <button class="btn btn-dark" type="submit">Filter</button>
+  {% if querystring %}<a class="btn btn-outline" href="?">Clear</a>{% endif %}
+</form>
+
+<form method="post" id="bulk-form">{% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <div class="bulk">
+    <b><span id="sel-count">0</span> selected</b>
+    <button class="btn btn-green" formaction="{% url 'portal:members_verify' %}" data-needs-selection disabled>Verify selected</button>
+    <span class="muted">Print ID cards for selected verified members:</span>
+    <button class="btn btn-gold" formaction="/portal/members/cards.pdf" formtarget="_blank" name="per_page" value="10" data-needs-selection disabled>A4 · 10 per sheet</button>
+    <button class="btn btn-outline" formaction="/portal/members/cards.pdf" formtarget="_blank" name="per_page" value="8" data-needs-selection disabled>A4 · 8 per sheet</button>
+  </div>
+
+  <div class="card" style="padding:6px 10px">
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr>
+        <th><input type="checkbox" id="check-all" aria-label="Select all on this page"></th>
+        <th></th><th>Member</th><th>Electorate</th><th class="hide-sm">Phone</th><th>Status</th><th class="hide-sm">Registered</th><th>Card</th>
+      </tr></thead>
+      <tbody>
+      {% for mbr in page %}
+        <tr>
+          <td><input type="checkbox" name="ids" value="{{ mbr.pk }}" class="row-check"></td>
+          <td>{% if mbr.photo %}<img class="thumb" src="{{ mbr.photo.url }}" alt="" loading="lazy">{% else %}<span class="thumb" style="display:inline-block"></span>{% endif %}</td>
+          <td><span class="name" style="font-weight:600">{{ mbr.full_name }}</span><br><small class="muted">{{ mbr.membership_number|default:"No number yet" }} · {{ mbr.get_gender_display }}</small></td>
+          <td>{{ mbr.electorate.name }}<br><small class="muted">{{ mbr.electorate.province.name }}{% if mbr.llg_ward %} · {{ mbr.llg_ward }}{% endif %}</small>
+            {% if mbr.residential_address %}<br><small>{{ mbr.residential_address|truncatechars:60 }}</small>{% endif %}
+            {% if mbr.has_location %}<br><a href="{{ mbr.map_url }}" target="_blank" rel="noopener"><small>Open map ↗</small></a>{% endif %}</td>
+          <td class="hide-sm">{{ mbr.phone_number|default:"–" }}</td>
+          <td>{% if mbr.review_flag %}<span class="pill flag" title="{{ mbr.get_review_flag_display }}">Check duplicate</span>{% elif mbr.is_verified %}<span class="pill ok">Verified</span>{% else %}<span class="pill warn">Pending</span>{% endif %}</td>
+          <td class="hide-sm">{{ mbr.server_synced_at|date:"j M Y" }}<br><small class="muted">{{ mbr.get_source_display }}{% if mbr.registered_by %} · {{ mbr.registered_by.get_username }}{% endif %}</small></td>
+          <td class="nowrap">{% if mbr.is_verified %}<a href="/portal/members/{{ mbr.pk }}/card.pdf" target="_blank">{% if mbr.id_card_printed %}Reprint{% else %}Print{% endif %}</a>{% else %}<span class="muted">–</span>{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="8" class="muted" style="padding:28px;text-align:center">No members match.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</form>
+
+{% if page.has_other_pages %}
+<div class="pager">
+  {% if page.has_previous %}<a class="btn btn-outline" href="?{{ querystring }}{% if querystring %}&{% endif %}page={{ page.previous_page_number }}">&larr; Previous</a>{% endif %}
+  <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }} · {{ page.paginator.count }} members</span>
+  {% if page.has_next %}<a class="btn btn-outline" href="?{{ querystring }}{% if querystring %}&{% endif %}page={{ page.next_page_number }}">Next &rarr;</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var all = document.getElementById('check-all');
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('.row-check'));
+  var count = document.getElementById('sel-count');
+  function sync() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    count.textContent = n;
+    document.querySelectorAll('[data-needs-selection]').forEach(function (b) { b.disabled = n === 0; });
+  }
+  if (all) all.addEventListener('change', function () { boxes.forEach(function (b) { b.checked = all.checked; }); sync(); });
+  boxes.forEach(function (b) { b.addEventListener('change', sync); });
+  sync();
+})();
+</script>
+{% endblock %}

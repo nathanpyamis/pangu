@@ -1,0 +1,37 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a3418">
+<title>{% block title %}Portal{% endblock %} · {{ party.name }}</title>
+<link rel="icon" href="{{ party_logo }}">
+<link rel="stylesheet" href="{% static 'portal/css/portal.css' %}">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="{% url 'portal:dashboard' %}"><img src="{{ party_logo }}" alt=""><span>{{ party.name }}<small>Staff portal</small></span></a>
+  <div class="who"><b>{{ user.get_full_name|default:user.username }}</b>{% if user.is_exec %}National Executive{% else %}{{ user.get_role_display }}{% if user.assigned_province %} · {{ user.assigned_province.name }}{% endif %}{% endif %}</div>
+  <form method="post" action="{% url 'portal:logout' %}">{% csrf_token %}<button type="submit">Log out</button></form>
+</header>
+<div class="layout">
+  <nav class="sidenav" aria-label="Portal">
+    <a href="{% url 'portal:dashboard' %}" class="{% if section == 'dashboard' %}on{% endif %}"><span class="dot"></span>Overall progress</a>
+    <a href="{% url 'candidate_db:database' %}" class="{% if section == 'candidates' %}on{% endif %}"><span class="dot"></span>Candidates</a>
+    <a href="{% url 'portal:members' %}" class="{% if section == 'members' %}on{% endif %}"><span class="dot"></span>Members</a>
+    <a href="{% url 'staff:list' %}" class="{% if section == 'staff' %}on{% endif %}"><span class="dot"></span>Field officers</a>
+    <div class="sep"></div>
+    <div class="label">Tools</div>
+    <a href="/agent/"><span class="dot"></span>Agent app</a>
+    {% if user.is_staff %}<a href="/admin/"><span class="dot"></span>Admin</a>{% endif %}
+    <a href="{% url 'home' %}"><span class="dot"></span>Public site</a>
+  </nav>
+  <main>
+    {% for m in messages %}<div class="alert alert-{{ m.tags|default:'ok' }}">{{ m }}</div>{% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

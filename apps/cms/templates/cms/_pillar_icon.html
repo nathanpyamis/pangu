@@ -1,0 +1,6 @@
+{% if p.pillar_key == "economy" %}<svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/><path d="M15 8h4v4"/></svg>
+{% elif p.pillar_key == "agriculture" %}<svg viewBox="0 0 24 24"><path d="M12 21V10"/><path d="M12 10c0-4 3-7 7-7 0 4-3 7-7 7z"/><path d="M12 14c0-3-2.5-5.5-6-5.5 0 3.5 2.5 5.5 6 5.5z"/><path d="M5 21h14"/></svg>
+{% elif p.pillar_key == "infra" %}<svg viewBox="0 0 24 24"><path d="M2 20h20"/><path d="M4 20V10l8-6 8 6v10"/><path d="M9 20v-6h6v6"/></svg>
+{% elif p.pillar_key == "education" %}<svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/><path d="M22 9v6"/></svg>
+{% elif p.pillar_key == "health" %}<svg viewBox="0 0 24 24"><path d="M20.8 8.6a5 5 0 0 0-8.8-3.2 5 5 0 0 0-8.8 3.2c0 5.4 8.8 11.4 8.8 11.4s8.8-6 8.8-11.4z"/><path d="M8 11h2.5l1.5-3 2 6 1.5-3H18"/></svg>
+{% else %}<svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>{% endif %}
