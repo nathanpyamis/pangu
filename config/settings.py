@@ -24,7 +24,7 @@ SECRET_KEY = env("DJANGO_SECRET_KEY", "dev-only-insecure-key")
 DEBUG = env_bool("DJANGO_DEBUG", "1" if LOCAL_DEV else "0")
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
-PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
+PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", "http://localhost:8000","pangu-portal.onrender.com").rstrip("/")
 PWA_VERSION = env("PWA_VERSION", "3")  # bump when agent app JS changes so phones update
 
 INSTALLED_APPS = [
