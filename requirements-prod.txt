@@ -4,3 +4,4 @@ psycopg[binary]>=3.2       # PostgreSQL (used when POSTGRES_HOST is set)
 whitenoise>=6.7            # static files when DEBUG is off
 gunicorn>=22.0
 django-storages[s3]>=1.14  # only if USE_S3=1 (AWS S3 / Cloudflare R2)
+boto3
