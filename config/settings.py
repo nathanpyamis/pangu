@@ -88,6 +88,12 @@ else:
             "HOST": env("POSTGRES_HOST"),
             "PORT": env("POSTGRES_PORT", "5432"),
             "CONN_MAX_AGE": 60,
+            "OPTIONS": {
+                # Render's external Postgres endpoint: SSL is mandatory, and its
+                # proxy makes SCRAM channel binding fail, so turn that check off.
+                "sslmode": env("POSTGRES_SSLMODE", "require"),
+                "channel_binding": env("POSTGRES_CHANNEL_BINDING", "disable"),
+            },
         }
     }
 
