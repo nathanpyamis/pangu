@@ -22,9 +22,9 @@ LOCAL_DEV = not env("POSTGRES_HOST")
 
 SECRET_KEY = env("DJANGO_SECRET_KEY", "dev-only-insecure-key")
 DEBUG = env_bool("DJANGO_DEBUG", "1" if LOCAL_DEV else "0")
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1", "pangu-portal.onrender.com")
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
-PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", "http://localhost:8000","pangu-portal.onrender.com").rstrip("/")
+PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
 PWA_VERSION = env("PWA_VERSION", "3")  # bump when agent app JS changes so phones update
 
 INSTALLED_APPS = [
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "apps.idcards",
     "apps.portal",
     "apps.pwa",
+    "storages",
 ]
 
 MIDDLEWARE = [
@@ -118,17 +119,17 @@ if env_bool("USE_S3"):
     STORAGES["default"] = {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
-            "bucket_name": env("S3_BUCKET"),
-            "access_key": env("S3_ACCESS_KEY"),
-            "secret_key": env("S3_SECRET_KEY"),
-            "endpoint_url": env("S3_ENDPOINT_URL") or None,
-            "region_name": env("S3_REGION", "auto"),
+            "bucket_name": env("AWS_STORAGE_BUCKET_NAME"),
+            "access_key": env("AWS_ACCESS_KEY_ID"),
+            "secret_key": env("AWS_SECRET_ACCESS_KEY"),
+            "endpoint_url": env("AWS_S3_ENDPOINT_URL") or None,
+            "region_name": env("AWS_S3_REGION_NAME", "auto"),
+            "signature_version": "s3v4",
             "default_acl": "private",      # member photos are personal data
-            "querystring_auth": True,      # signed, expiring URLs
+            "querystring_auth": True,      # signed, expiring links
             "file_overwrite": False,
         },
     }
-
 # Candidate documents (NID copy, CV, police clearance, photo) are personal data.
 # They live OUTSIDE MEDIA_ROOT so /media/ can never serve them; reviewers open
 # them through a login-protected view. On Render, point this at a persistent disk.
